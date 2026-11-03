@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{--ink:#203044;--muted:#667487;--line:#dce4eb;--paper:#f3f6f8;--teal:#246b70;--teal2:#e6f3f0}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,"Noto Sans KR",sans-serif}
+    .wrap{max-width:980px;margin:auto;padding:15px}.hero{background:linear-gradient(125deg,#172c48,#245b70 65%,#317b78);color:white;border-radius:18px;padding:22px;position:relative;overflow:hidden}
+    .hero:after{content:"🧭";position:absolute;right:20px;top:18px;font-size:62px;opacity:.22}.eyebrow{font-size:11px;letter-spacing:2px;font-weight:bold;color:#b9e4dc}
+    h1{font-size:clamp(23px,5vw,33px);line-height:1.2;margin:8px 0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}.stat{background:#ffffff1c;border:1px solid #ffffff33;border-radius:12px;padding:10px}.stat span{font-size:11px;opacity:.8}.stat b{display:block;font-size:20px;margin-top:3px}
+    .panel{background:white;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:12px}.muted{color:var(--muted)}.small{font-size:12px}.btn{border:0;border-radius:10px;padding:12px 15px;font-weight:bold;cursor:pointer}.primary{background:var(--teal);color:white}.secondary{background:#edf1f4;color:var(--ink);border:1px solid var(--line)}.full{width:100%}
+    input{width:100%;padding:12px;border:1px solid #cbd5df;border-radius:9px;font-size:16px;margin-top:9px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.region{border:1px solid var(--line);border-radius:13px;padding:12px;background:white;text-align:left;min-height:112px;cursor:pointer;color:var(--ink)}.region:disabled{opacity:.5;cursor:not-allowed}.region.done{border-color:#368b86;background:#eff8f5}.tag{display:inline-block;border-radius:20px;background:#edf2f4;padding:5px 9px;font-size:11px;font-weight:bold;margin:2px}
+    .bar{height:9px;border-radius:9px;background:#e9eef1;overflow:hidden;margin-top:8px}.bar>div{height:100%;background:linear-gradient(90deg,#36a28e,#b2c96d);transition:width .2s}.qtitle{font-size:19px;font-weight:bold;line-height:1.45;margin:16px 0 10px}.answer{display:block;width:100%;text-align:left;padding:13px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink);margin:7px 0;cursor:pointer;font-size:15px;line-height:1.45}.answer:disabled{opacity:1}.answer.correct{border-color:#23865b;background:#eaf6ef}.answer.wrong{border-color:#c45b50;background:#fff0ee}.feedback{border-radius:11px;padding:13px;margin-top:12px;font-size:14px;line-height:1.65}.good{background:#eaf6ef;border:1px solid #b9dfc8}.bad{background:#fff0ee;border:1px solid #efc2bc}.hidden{display:none!important}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-title{font-size:19px;font-weight:800;margin-bottom:8px}.tablewrap{overflow-x:auto}.table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}.table td,.table th{padding:9px 7px;border-bottom:1px solid var(--line);text-align:left}.table th{color:var(--muted);font-size:11px}.center{text-align:center}
+    @media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.wrap{padding:24px}.panel{padding:19px}}
+
+    /* Map voyage UI */
+    .voyage-map{position:relative;border-radius:20px;overflow:hidden;background:radial-gradient(ellipse at 25% 20%,#d8f4f7 0,#b8e1ef 45%,#8fc7df 100%);border:1px solid #9dc9da;min-height:380px;box-shadow:inset 0 0 40px #ffffff70,0 12px 28px #17445c18}
+    .voyage-map svg{display:block;width:100%;height:auto;min-height:380px;filter:drop-shadow(0 2px 2px #477b8c25)}
+    .map-caption{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+    .map-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#6b7b8d}
+    .map-legend span{display:inline-flex;align-items:center;gap:5px}
+    .legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#f7c96b}
+    .voyage-tip{background:#f2f8fb;border:1px solid #c6e0e5;border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.5;margin-top:10px}
+    .port-node{cursor:pointer;outline:none}.port-node .halo{fill:#f8d77b;opacity:.17;transition:opacity .2s}.port-node:hover .halo{opacity:.42}
+    .port-node.locked{opacity:.45;cursor:not-allowed}.port-node.completed .port-core{fill:#55d6a5;stroke:#e0fff2}
+    .port-node .port-core{fill:#f7c96b;stroke:#fff4ca;stroke-width:3}.port-node text{font-family:Arial,"Noto Sans KR",sans-serif;fill:#fff;font-size:16px;font-weight:800;paint-order:stroke;stroke:#12364c;stroke-width:4px;stroke-linejoin:round}
+    .port-node .port-sub{font-size:11px;font-weight:600;fill:#d6e9f2;stroke-width:3px}
+    .route-line{fill:none;stroke:#8de4e4;stroke-width:2.5;stroke-dasharray:7 8;opacity:.48}
+    .route-line.active{stroke:#ffe08a;stroke-width:4;opacity:1;stroke-dasharray:9 6;animation:routeDash 1s linear infinite}
+    @keyframes routeDash{to{stroke-dashoffset:-30}}
+    #shipMarker{transition:transform 1.15s cubic-bezier(.2,.75,.25,1);filter:drop-shadow(0 4px 5px #001a2b)}
+    .map-heading{font-size:18px;font-weight:900;color:#17354a}.map-sub{font-size:12px;color:#6b7b8d}
+    @media(max-width:600px){.voyage-map{min-height:300px}.voyage-map svg{min-height:300px}.port-node text{font-size:18px}.port-node .port-sub{font-size:13px}}
+
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">HISTORY RPG · EAST ASIA MARITIME NETWORK</div>
+    <h1>동아시아 교역망 탐험대</h1>
+    <div>사라진 교역의 비밀을 찾아 8개 지역을 탐험하라!</div>
+    <div class="stats">
+      <div class="stat"><span>획득 경험치</span><b id="xp">0 XP</b></div>
+      <div class="stat"><span>탐험 지역</span><b id="cleared">0 / 8</b></div>
+      <div class="stat"><span>경과 시간</span><b id="clock">00:00</b></div>
+    </div>
+  </header>
+
+  <section id="intro" class="panel">
+    <div class="row"><div><div class="section-title">탐험가 등록</div><div class="muted small">이름 또는 출석번호를 입력하고 시작하세요.</div></div><div style="font-size:36px">🧑‍✈️</div></div>
+    <input id="playerName" maxlength="24" placeholder="예: 20315 또는 역사탐험가">
+    <div class="grid" style="margin-top:12px">
+      <div class="panel" style="margin:0;background:#f6f8fa">🎯 <b>개인별 경쟁</b><br><span class="muted small">정답과 풀이 속도로 점수 획득</span></div>
+      <div class="panel" style="margin:0;background:#f6f8fa">🗺️ <b>8개 지역 탐험</b><br><span class="muted small">지역 임무와 최종 퀘스트</span></div>
+    </div>
+    <button id="startBtn" class="btn primary full" style="margin-top:14px">탐험 시작하기 →</button>
+    <p class="small muted">완료 후 기록이 공용 순위표에 저장됩니다. 이름 대신 출석번호를 사용하는 것을 권장합니다.</p>
+  </section>
+
+  <main id="game" class="hidden">
+    <section class="panel">
+      <div class="row"><b id="welcome"></b><span id="progressText" class="small muted">0 / 8 지역 완료</span></div>
+      <div class="bar"><div id="progressBar" style="width:0%"></div></div><div id="inventory" style="margin-top:8px"></div>
+    </section>
+    <section id="mapView" class="panel">
+      <div class="row"><div class="section-title">🗺️ 탐험 지도</div><span class="tag">지역 선택</span></div>
+      <p class="small muted">지역별 문제 2개를 해결하면 교역품을 얻습니다. 8개 지역을 완료하면 최종 퀘스트가 열립니다.</p>
+      <div class="map-caption"><div><div class="map-heading">🌊 동아시아 해상 교역로</div><div class="map-sub">항구를 선택하면 범선이 이동하고, 도착 후 퀴즈가 시작됩니다.</div></div><span class="tag">항구 8곳 · 항해 지도</span></div>
+      <div class="voyage-map" id="voyageMap">
+        <svg id="tradeMapSvg" viewBox="0 0 1000 620" role="img" aria-label="동아시아 해상 교역 지도">
+          <defs>
+            <pattern id="mapGrid" width="70" height="70" patternUnits="userSpaceOnUse"><path d="M70 0H0V70" fill="none" stroke="#b9d4df" stroke-width="1" opacity=".22"/></pattern>
+            <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#cce8f5"/><stop offset="1" stop-color="#a9d4e9"/></linearGradient>
+          </defs>
+          <rect width="1000" height="620" fill="url(#sea)"/><rect width="1000" height="620" fill="url(#mapGrid)"/>
+          <!-- simplified, map-like land silhouettes -->
+          <g fill="#e8e9d4" stroke="#b8cbb8" stroke-width="2" stroke-linejoin="round">
+            <path d="M0 0H480L450 45 418 62 400 96 363 118 344 149 304 160 279 194 242 208 210 245 172 258 145 292 112 301 91 332 63 350 39 374 0 390Z"/>
+            <path d="M530 0H1000V116L963 130 931 157 902 164 877 190 847 186 822 161 794 152 769 126 735 116 710 90 673 83 641 58 611 54 579 68 550 49Z"/>
+            <path d="M0 425L42 407 78 414 105 443 127 468 155 494 148 529 118 541 93 526 66 503 36 498 0 512Z"/>
+            <path d="M365 250L389 229 420 239 440 271 452 306 437 340 416 365 395 347 383 315 368 287Z"/>
+            <path d="M478 300L505 286 528 309 526 346 507 372 487 354 474 329Z"/>
+            <path d="M566 390L598 373 627 388 639 418 624 447 600 460 579 437Z"/>
+            <path d="M692 252L719 236 744 256 754 293 739 321 718 310 704 284Z"/>
+            <path d="M770 350L794 331 818 346 825 378 811 408 790 396Z"/>
+            <path d="M849 174L874 155 896 170 903 199 887 222 865 210Z"/>
+            <path d="M658 500L688 484 715 498 729 525 713 549 684 551 663 529Z"/>
+            <path d="M752 519L778 506 800 522 808 547 791 569 766 558Z"/>
+            <!-- islands -->
+            <path d="M640 190l10 -7 9 12 -5 16 -11 -5zM665 222l8 -6 9 10 -4 13 -10 -4zM684 250l9 -5 8 10-5 13-9-4zM710 282l8-5 8 9-5 12-9-3z"/>
+          </g>
+          <g fill="#c9d9c4" stroke="#a9c4b2" stroke-width="1.5"><path d="M830 115l13-8 13 9-4 18-14 7-10-12z"/><path d="M835 133l9 9-4 20-10 9-7-15z"/><path d="M854 164l9 5-3 16-8 5-6-12z"/></g>
+          <g id="routeLayer"></g><g id="portLayer"></g>
+          <g id="shipMarker" transform="translate(475 180)"><text x="0" y="0" text-anchor="middle" font-size="34">⛵</text></g>
+          <text x="22" y="598" fill="#507b91" font-size="13">동아시아 해상 교역로 · 학습용 개략 지도</text>
+        </svg>
+      </div>
+      <div class="map-legend"><span><i class="legend-dot"></i> 탐험 가능한 항구</span><span>🟢 완료 항구</span><span>⛵ 현재 범선</span><span>〰️ 해상 교역로</span></div>
+      <div class="voyage-tip" id="voyageTip">🧭 <b>항해 안내</b>　첫 항구를 선택해 출항하세요. 각 항구에서 퀴즈 2개를 해결하면 교역품과 경험치를 획득합니다.</div>
+      <div id="regions" class="hidden"></div>
+      <button id="finalAccess" class="btn primary full hidden" style="margin-top:13px">🌏 최종 교역망 퀘스트 도전하기 →</button>
+    </section>
+    <section id="missionView" class="panel hidden">
+      <button id="backBtn" class="btn secondary">← 탐험 지도</button>
+      <div class="row" style="margin-top:14px"><div><div id="missionNo" class="small muted"></div><div id="missionTitle" class="section-title"></div><div id="missionDesc" class="small muted"></div></div><div id="missionEmoji" style="font-size:40px"></div></div>
+      <div class="bar"><div id="questionBar" style="width:0%"></div></div>
+      <div class="row small muted" style="margin-top:12px"><span id="questionCount"></span><span class="tag">정답 기본 100 XP</span></div>
+      <div id="questionText" class="qtitle"></div><div id="answers"></div><div id="feedback" class="feedback hidden"></div>
+      <button id="nextBtn" class="btn primary full hidden" style="margin-top:12px">다음 문제 →</button>
+    </section>
+    <section id="finalView" class="panel hidden">
+      <div style="font-size:32px">🌏</div><div class="section-title">최종 퀘스트: 교역망을 완성하라!</div>
+      <p class="small muted">지역에서 배운 사실을 연결해 동아시아와 세계의 교역망을 설명하세요.</p>
+      <div class="bar"><div id="finalBar" style="width:0%"></div></div><div id="finalCount" class="small muted" style="margin-top:12px"></div>
+      <div id="finalQuestion" class="qtitle"></div><div id="finalAnswers"></div><div id="finalFeedback" class="feedback hidden"></div>
+      <button id="finalNext" class="btn primary full hidden" style="margin-top:12px">다음 문제 →</button>
+    </section>
+    <section id="resultView" class="panel hidden center">
+      <div style="font-size:48px">🏆</div><div class="section-title">탐험 완료!</div><div id="resultName" class="muted"></div>
+      <div class="grid" style="margin-top:14px">
+        <div class="panel" style="margin:0;background:#f6f8fa"><div class="small muted">최종 경험치</div><div id="resultXP" style="font-size:24px;font-weight:bold"></div></div>
+        <div class="panel" style="margin:0;background:#f6f8fa"><div class="small muted">정답률</div><div id="resultRate" style="font-size:24px;font-weight:bold"></div></div>
+      </div>
+      <div id="saveStatus" class="feedback good">결과를 저장하고 있습니다…</div>
+      <div class="section-title" style="text-align:left;margin-top:18px">🎒 획득한 교역품</div><div id="resultLoot" style="text-align:left"></div>
+      <button id="showRankingBtn" class="btn secondary full" style="margin-top:14px">🏅 공개 순위표 보기</button>
+      <button id="restartBtn" class="btn primary full" style="margin-top:8px">처음부터 다시 도전하기</button>
+    </section>
+  </main>
+
+  <section id="rankingView" class="panel hidden">
+    <div class="row"><div class="section-title">🏅 탐험가 공개 순위표</div><button id="closeRanking" class="btn secondary">닫기</button></div>
+    <p class="small muted">총점이 높은 순서입니다. 동점이면 정답률, 완료 시간이 순서대로 반영됩니다.</p>
+    <div id="publicRanking" class="tablewrap"></div>
+  </section>
+
+  <section id="teacherView" class="panel">
+    <div class="row"><div><div class="section-title">👩‍🏫 교사용 결과 확인</div><div class="small muted">교사 비밀번호를 입력하면 전체 기록과 순위를 확인할 수 있습니다.</div></div><span class="tag">교사 전용</span></div>
+    <input id="teacherPin" type="password" placeholder="교사 비밀번호">
+    <button id="teacherLogin" class="btn secondary full" style="margin-top:9px">전체 랭킹 확인</button>
+    <div id="teacherError" class="feedback bad hidden"></div>
+    <div id="teacherResults" class="hidden">
+      <div class="row" style="margin-top:15px"><b>전체 제출 기록</b><button id="csvBtn" class="btn secondary">CSV 내려받기</button></div>
+      <div id="teacherTable" class="tablewrap" style="margin-top:8px"></div>
+      <button id="clearResults" class="btn secondary" style="margin-top:12px;color:#a33">전체 기록 초기화</button>
+    </div>
+  </section>
+  <p class="small muted center" style="padding:12px">학습 근거: 제공된 교과서 80~93쪽 · 점수는 정답과 풀이 시간에 따라 산정됩니다.</p>
+</div>
+
+<script>
+const REGIONS = [
+{id:'china',name:'중국·명',emoji:'🐉',desc:'정화의 원정과 해금 정책',loot:'비단·청화백자',questions:[
+{q:'명나라 영락제가 정화를 여러 차례 해외로 파견한 주된 목적은?',a:['명나라의 위상을 과시하고 조공 체제를 확대하기 위해','유럽의 식민지를 직접 정복하기 위해','일본의 은광을 개발하기 위해','동남아시아의 향신료 생산을 독점하기 위해'],c:0,e:'정화의 원정은 명의 국력을 과시하고 조공 체제를 확대하려는 목적을 지녔다. 1405년부터 모두 7차례에 걸쳐 동남아시아·인도·서아시아·동아프리카까지 항해했다.'},
+{q:'명나라의 해금 정책과 관련한 설명으로 옳은 것은?',a:['민간의 사적인 해외 무역을 제한하였다.','모든 외국 상인의 중국 입국을 영구 금지하였다.','일본 상인에게 중국 연안의 자유 무역을 허용하였다.','유럽 상인에게 중국 전역의 자유 무역을 허용하였다.'],c:0,e:'명은 해금 정책으로 민간의 사적인 해외 무역을 제한했다. 정화 사후 국가 주도의 교역은 조공 무역 중심으로 제한되었지만, 해안 지역에서는 밀무역도 이루어졌다.'}]},
+{id:'ryukyu',name:'류큐',emoji:'⛵',desc:'동아시아 해상 교역의 중계지',loot:'중계 무역 네트워크',questions:[
+{q:'류큐 왕국의 교역상 특징으로 가장 적절한 것은?',a:['명·조선·일본·동남아시아를 연결하는 중계 무역을 하였다.','아메리카 은을 독점 생산하였다.','유럽의 향신료 무역을 모두 통제하였다.','중국과의 교역을 완전히 단절하였다.'],c:0,e:'교과서는 류큐를 명·조선·일본·동남아시아를 연결하는 중계 무역의 거점으로 설명한다.'},
+{q:'명나라의 해금 정책 이후 동아시아 해상 교역에 나타난 변화는?',a:['민간 밀무역과 주변 지역의 교역 활동이 이어졌다.','동아시아의 모든 해상 교역이 완전히 사라졌다.','류큐가 유럽의 식민지로 편입되었다.','중국 도자기의 생산이 중단되었다.'],c:0,e:'공식적인 민간 해외 무역은 제한되었지만 해안 지역의 중국인과 일본인 해상 세력 등이 밀무역을 벌였다. 류큐 등 주변 지역은 교역을 연결하는 역할을 하였다.'}]},
+{id:'vietnam',name:'베트남·호이안',emoji:'🏮',desc:'다양한 상인이 모인 국제 항구',loot:'도자기·향료',questions:[
+{q:'호이안이 국제 무역항으로 성장한 모습으로 교과서에 제시된 것은?',a:['중국·일본·인도·네덜란드 상인 등이 모여들었다.','스페인 상인만 거주하며 다른 상인은 배제되었다.','명나라 황제의 수도로 기능하였다.','일본의 은광이 집중된 내륙 도시였다.'],c:0,e:'호이안에는 중국·일본·인도·네덜란드 등 여러 지역의 상인들이 모여들었다. 일본인과 중국인의 거주 구역은 일본 다리(내원교)를 사이에 두고 구분되었다.'},
+{q:'호이안의 일본인 거류지와 중국인 거류지를 연결하는 다리로 소개된 것은?',a:['일본 다리(내원교)','금문교','마르코 폴로 다리','정화의 다리'],c:0,e:'교과서는 호이안의 일본인 거류지와 중국인 거류지를 연결하는 다리로 일본 다리, 즉 내원교를 소개한다.'}]},
+{id:'melaka',name:'말레이반도·말라카',emoji:'🕌',desc:'인도양과 동아시아를 잇는 항구',loot:'인도 면직물·후추',questions:[
+{q:'말라카가 중요한 중계 무역항으로 성장한 지리적 이유는?',a:['페르시아만과 중국을 잇는 해상 교역로의 중간 지점에 있었기 때문에','유럽 대륙의 중심에 있었기 때문에','일본 열도와 아메리카 사이에 있었기 때문에','중국 내륙의 황허강 상류에 있었기 때문에'],c:0,e:'말라카는 페르시아만과 중국을 연결하는 해상 교역로의 중간 지점에 위치해 중계 무역항으로 번성했다.'},
+{q:'말라카의 지배 세력 변화 순서로 옳은 것은?',a:['포르투갈 → 네덜란드 → 영국','네덜란드 → 포르투갈 → 영국','영국 → 스페인 → 포르투갈','스페인 → 영국 → 네덜란드'],c:0,e:'말라카는 1511년 포르투갈에 점령되었고, 1641년 네덜란드의 지배를 받았다. 이후 영국이 말레이반도로 세력을 확대했다.'}]},
+{id:'indonesia',name:'인도네시아·말루쿠',emoji:'🌶️',desc:'향신료 생산과 네덜란드의 진출',loot:'정향·육두구',questions:[
+{q:'말루쿠 제도와 관련하여 유럽 상인들이 주목한 주요 상품은?',a:['정향과 육두구 등 향신료','모피와 목재','석탄과 철광석','차와 비단'],c:0,e:'말루쿠 제도는 정향·육두구 등 향신료 산지로 알려져 있었다. 유럽 세력은 향신료 무역을 장악하기 위해 동남아시아로 진출했다.'},
+{q:'네덜란드 동인도 회사의 동남아시아 진출에 관한 설명은?',a:['인도네시아와 향신료 제도에 진출하고 바타비아를 건설하였다.','마닐라를 중심으로 멕시코 은을 독점하였다.','호이안에서 일본과의 교역을 전면 금지하였다.','말라카를 처음 점령한 유럽 세력이었다.'],c:0,e:'네덜란드 동인도 회사는 인도네시아와 향신료 제도에 진출하고 바타비아를 건설했다. 나가사키를 통한 일본과 유럽의 교역에도 관여했다.'}]},
+{id:'philippines',name:'필리핀·마닐라',emoji:'⛵',desc:'마닐라 갈레온 무역',loot:'아메리카 은',questions:[
+{q:'마닐라 갈레온 무역의 주요 교역 구조로 옳은 것은?',a:['아메리카의 은을 중국산 비단·도자기 등과 교환하였다.','일본의 은을 유럽산 향신료와 교환하였다.','중국의 차를 아프리카의 금과 교환하였다.','인도의 면직물을 조선의 인삼과만 교환하였다.'],c:0,e:'스페인은 필리핀의 마닐라를 거점으로 아메리카의 은을 중국산 비단·도자기·칠기 등과 교환했다.'},
+{q:'필리핀을 점령하고 마닐라를 교역 거점으로 삼은 유럽 세력은?',a:['스페인','포르투갈','네덜란드','영국'],c:0,e:'스페인은 필리핀을 점령하고 마닐라와 비간 등을 거점으로 삼았다. 멕시코의 은과 중국 상품이 이 교역망을 통해 연결되었다.'}]},
+{id:'japan',name:'일본',emoji:'🗾',desc:'나가사키 무역과 이와미 은광',loot:'은·일본 상품',questions:[
+{q:'교과서에서 16세기 일본의 주요 은 생산지로 소개한 곳은?',a:['이와미 은광','보하이만 은광','말루쿠 은광','마닐라 은광'],c:0,e:'일본은 16세기 세계 은 생산에서 큰 비중을 차지했으며, 교과서는 이와미 은광을 대표적인 은 생산지로 제시한다. 일본 은은 조선을 거쳐 중국으로 이동하기도 했다.'},
+{q:'에도 시대 일본의 대외 무역 정책에 관한 설명으로 옳은 것은?',a:['해외 교역을 제한하면서 나가사키에서 네덜란드·중국과의 교역을 허용하였다.','모든 유럽 국가에 일본 전역의 자유 무역을 허용하였다.','중국 상인과의 교역을 완전히 중단하였다.','마닐라를 일본의 해외 무역 중심지로 삼았다.'],c:0,e:'에도 막부는 해상 교역을 제한했지만 나가사키에서는 네덜란드와 중국 상인의 교역을 허용했다.'}]},
+{id:'europe',name:'유럽·세계 교역',emoji:'🌍',desc:'유럽 세력의 진출과 문화 교류',loot:'은·세계 교역망',questions:[
+{q:'포르투갈의 아시아 진출과 관련한 설명으로 옳은 것은?',a:['1511년 말라카를 점령하고 호이안·마카오·나가사키 등으로 진출하였다.','필리핀을 점령하고 마닐라 갈레온 무역을 독점하였다.','바타비아를 건설하고 인도네시아를 지배하였다.','버마와 말레이반도에 19세기 진출하였다.'],c:0,e:'포르투갈은 1511년 말라카를 점령한 뒤 호이안·마카오·나가사키 등으로 진출했다. 일본에서는 화기와 화약을 판매하기도 했다.'},
+{q:'유럽에서 중국풍 취향이 유행한 현상을 가리키는 용어는?',a:['시누아즈리(Chinoiserie)','자포니즘(Japonisme)','해금(海禁)','조공 무역'],c:0,e:'시누아즈리는 17세기 후반부터 유럽에서 유행한 중국풍 취향을 뜻한다. 자포니즘은 19세기 중후반 유럽에서 일본 미술과 문화에 관심이 높아진 현상이다.'}]}
+];
+const FINALS=[
+{q:'마닐라 갈레온 무역에서 아메리카 은과 교환된 대표적인 중국 상품은?',a:['비단과 도자기','후추와 정향','면직물과 말','은과 구리'],c:0,e:'스페인은 아메리카 은을 중국산 비단·도자기·칠기 등과 교환했다. 마닐라는 아메리카와 아시아를 잇는 교역 거점이었다.'},
+{q:'말라카에서 거래된 상품의 조합으로 교과서의 설명에 부합하는 것은?',a:['인도 면직물·말루쿠 향신료·수마트라 금과 후추·중국 비단과 도자기','아메리카 은·유럽 모피·일본 쌀·조선 인삼만 거래','중국 차·유럽 석탄·아프리카 커피만 거래','일본 도검·러시아 모피·아메리카 옥수수만 거래'],c:0,e:'말라카에는 인도의 면직물, 말루쿠의 향신료, 수마트라의 금과 후추, 중국의 비단과 도자기 등이 모였다.'},
+{q:'중국에서 은이 널리 유통되고 세금 납부에도 활용된 현상과 관련 있는 것은?',a:['세계 각지에서 은이 중국으로 유입된 교역망의 확대','중국이 모든 대외 교역을 중단한 결과','일본의 은 생산이 완전히 중단된 결과','유럽에서 중국 상품의 수입이 금지된 결과'],c:0,e:'아메리카 은은 마닐라 갈레온 무역과 포르투갈의 마카오 무역, 네덜란드 동인도 회사 등을 통해 중국으로 유입되었다. 일본 은도 조선을 거쳐 중국으로 이동했고, 은은 중국에서 화폐와 세금 납부 수단으로 중요해졌다.'},
+{q:'19세기 중후반 유럽에서 일본 미술에 대한 관심이 높아지고, 우키요에가 모네·드가·반 고흐 등에게 영향을 준 현상은?',a:['자포니즘(Japonisme)','시누아즈리(Chinoiserie)','해금 정책','조공 체제'],c:0,e:'자포니즘은 19세기 중후반 유럽에서 일본 문화와 미술에 대한 관심이 높아진 현상이다. 일본의 우키요에는 유럽 화가들에게 영향을 주었다.'}
+];
+
+let player='',xp=0,correct=0,attempts=0,cleared=new Set(),inventory=[],current=null,qIndex=0,answered=false,finalIndex=0,finalDone=false,startAt=0,qStarted=0,timer=null,teacherRows=[];
+const $=id=>document.getElementById(id);
+function shuffleQuestion(item){return {q:item.q,a:item.a.map((v,i)=>({v,correct:i===item.c})).sort(()=>Math.random()-.5),e:item.e};}
+function fmtTime(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function elapsed(){return Math.max(1,Math.floor((Date.now()-startAt)/1000));}
+function show(id){['mapView','missionView','finalView','resultView'].forEach(x=>$(x).classList.toggle('hidden',x!==id));}
+function updateStats(){$('xp').textContent=xp+' XP';$('cleared').textContent=cleared.size+' / 8';$('progressText').textContent=cleared.size+' / 8 지역 완료';$('progressBar').style.width=(cleared.size/8*100)+'%';$('inventory').innerHTML=inventory.length?inventory.map(x=>'<span class="tag">🎁 '+x+'</span>').join(''):'<span class="tag">🎒 교역품: 아직 없음</span>';}
+function tick(){$('clock').textContent=fmtTime(elapsed());}
+const PORTS=[
+ {id:'china',x:475,y:180,label:'중국·명',sub:'정화의 원정',emoji:'🐉'},
+ {id:'ryukyu',x:690,y:215,label:'류큐',sub:'중계 무역',emoji:'⛵'},
+ {id:'vietnam',x:510,y:345,label:'호이안',sub:'국제 항구',emoji:'🏮'},
+ {id:'melaka',x:400,y:455,label:'말라카',sub:'해상 교역로',emoji:'🕌'},
+ {id:'indonesia',x:585,y:520,label:'말루쿠',sub:'향신료',emoji:'🌶️'},
+ {id:'philippines',x:760,y:380,label:'마닐라',sub:'갈레온 무역',emoji:'🌎'},
+ {id:'japan',x:825,y:145,label:'나가사키',sub:'은·나가사키',emoji:'🗾'},
+ {id:'europe',x:160,y:175,label:'마카오',sub:'포르투갈 교역',emoji:'🌍'}
+];
+const PORT_ROUTE=[['europe','china'],['china','japan'],['china','ryukyu'],['ryukyu','vietnam'],['vietnam','melaka'],['melaka','indonesia'],['melaka','philippines'],['philippines','japan']];
+function drawMap(){
+ const layer=$('portLayer'),routes=$('routeLayer');if(!layer||!routes)return;
+ const byId=Object.fromEntries(PORTS.map(p=>[p.id,p]));
+ routes.innerHTML=PORT_ROUTE.map(([a,b])=>{const p=byId[a],q=byId[b];return `<path class="route-line" id="route-${a}-${b}" d="M${p.x} ${p.y} Q${(p.x+q.x)/2} ${(p.y+q.y)/2-35} ${q.x} ${q.y}"/>`;}).join('');
+ layer.innerHTML=PORTS.map(p=>{const done=cleared.has(p.id);return `<g class="port-node ${done?'completed':''}" data-port="${p.id}" tabindex="0" role="button" aria-label="${p.label} ${done?'탐험 완료':'항해하기'}" transform="translate(${p.x} ${p.y})"><circle class="halo" r="30"/><circle class="port-core" r="12"/><text x="0" y="-23" text-anchor="middle">${p.emoji} ${p.label}</text><text class="port-sub" x="0" y="35" text-anchor="middle">${done?'✓ 완료':p.sub}</text></g>`;}).join('');
+ layer.querySelectorAll('[data-port]').forEach(node=>{const id=node.dataset.port;if(cleared.has(id)){node.classList.add('locked');return;}node.addEventListener('click',()=>sailToPort(id));node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sailToPort(id);}});});
+ const start=PORTS.find(p=>p.id===lastPort)||PORTS[0];$('shipMarker').setAttribute('transform',`translate(${start.x} ${start.y})`);
+ $('finalAccess').classList.toggle('hidden',cleared.size!==8||finalDone);
+}
+let lastPort='china';
+function sailToPort(id){
+ const p=PORTS.find(x=>x.id===id),from=PORTS.find(x=>x.id===lastPort)||PORTS[0];
+ if(cleared.has(id))return;
+ document.querySelectorAll('.route-line').forEach(x=>x.classList.remove('active'));
+ const route=document.getElementById(`route-${lastPort}-${id}`)||document.getElementById(`route-${id}-${lastPort}`);if(route)route.classList.add('active');
+ $('shipMarker').setAttribute('transform',`translate(${p.x} ${p.y})`);
+ $('voyageTip').innerHTML=`⛵ <b>${p.label} 항구로 항해 중!</b>　범선이 해상 교역로를 따라 이동합니다.`;
+ document.querySelectorAll('.port-node').forEach(n=>n.style.pointerEvents='none');
+ setTimeout(()=>{document.querySelectorAll('.port-node').forEach(n=>n.style.pointerEvents='');if(!cleared.has(id)){lastPort=id;$('voyageTip').innerHTML=`⚓ <b>${p.label} 도착!</b>　항구에 입항했습니다. 퀴즈를 풀어 교역품을 획득하세요.`;startMission(id);}},1150);
+}
+function startMission(id){current=REGIONS.find(r=>r.id===id);qIndex=0;show('missionView');$('missionEmoji').textContent=current.emoji;$('missionNo').textContent='지역 임무 · '+(REGIONS.indexOf(current)+1)+' / 8';$('missionTitle').textContent=current.name;$('missionDesc').textContent=current.desc;renderQuestion();}
+function renderQuestion(){
+ const item=shuffleQuestion(current.questions[qIndex]);current.active=item;answered=false;qStarted=Date.now();
+ $('questionCount').textContent='문제 '+(qIndex+1)+' / 2';$('questionBar').style.width=(qIndex/2*100)+'%';$('questionText').textContent=item.q;
+ $('answers').innerHTML='';$('feedback').className='feedback hidden';$('nextBtn').classList.add('hidden');
+ item.a.forEach((a,i)=>{const b=document.createElement('button');b.className='answer';b.textContent=['①','②','③','④'][i]+' '+a.v;b.onclick=()=>answer(i,false);$('answers').appendChild(b);});
+}
+function awardSpeed(correctAnswer,base,maxBonus,limitSeconds,spent){
+ if(!correctAnswer)return 0;
+ return base+Math.max(0,Math.round(maxBonus*(1-Math.min(spent,limitSeconds)/limitSeconds)));
+}
+function answer(i,isFinal){
+ if(answered)return;answered=true;attempts++;
+ const item=isFinal?activeFinal:current.active,chosen=item.a[i],ok=chosen.correct,spent=Math.max(1,(Date.now()-qStarted)/1000);
+ const points=awardSpeed(ok,isFinal?150:100,isFinal?75:50,isFinal?45:30,spent);
+ if(ok){correct++;xp+=points;}
+ [...$('answers').children].forEach((b,j)=>{b.disabled=true;if(item.a[j].correct)b.classList.add('correct');else if(j===i)b.classList.add('wrong');});
+ const f=$('feedback');f.className='feedback '+(ok?'good':'bad');
+ f.innerHTML='<b>'+(ok?'정답! +'+points+' XP 획득 🎉':'오답입니다. 정답을 확인해 보세요.')+'</b><br>'+item.e+'<br><span class="small">풀이 시간: '+spent.toFixed(1)+'초 · '+(ok?'속도 보너스 포함':'오답은 경험치 없음')+'</span>';
+ $('nextBtn').textContent=qIndex===1?'지역 임무 완료 →':'다음 문제 →';$('nextBtn').classList.remove('hidden');updateStats();
+}
+function nextQuestion(){
+ if(qIndex===0){qIndex=1;renderQuestion();}
+ else{cleared.add(current.id);inventory.push(current.loot);xp+=50;updateStats();$('voyageTip').innerHTML='🎉 <b>'+current.name+' 항구 탐험 완료!</b>　교역품 '+current.loot+' 획득. 다음 항구를 선택해 항해를 이어가세요.';drawMap();show('mapView');}
+}
+let activeFinal=null;
+function startFinal(){finalIndex=0;show('finalView');renderFinal();}
+function renderFinal(){
+ activeFinal=shuffleQuestion(FINALS[finalIndex]);answered=false;qStarted=Date.now();
+ $('finalCount').textContent='최종 문제 '+(finalIndex+1)+' / 4';$('finalBar').style.width=(finalIndex/4*100)+'%';$('finalQuestion').textContent=activeFinal.q;
+ const fa=$('finalAnswers');fa.innerHTML='';
+ activeFinal.a.forEach((a,i)=>{const b=document.createElement('button');b.className='answer';b.textContent=['①','②','③','④'][i]+' '+a.v;b.onclick=()=>answerFinal(i);fa.appendChild(b);});
+ $('finalFeedback').className='feedback hidden';$('finalNext').classList.add('hidden');
+}
+function answerFinal(i){
+ if(answered)return;answered=true;attempts++;
+ const chosen=activeFinal.a[i],ok=chosen.correct,spent=Math.max(1,(Date.now()-qStarted)/1000),points=awardSpeed(ok,150,75,45,spent);
+ if(ok){correct++;xp+=points;}
+ [...$('finalAnswers').children].forEach((b,j)=>{b.disabled=true;if(activeFinal.a[j].correct)b.classList.add('correct');else if(j===i)b.classList.add('wrong');});
+ const f=$('finalFeedback');f.className='feedback '+(ok?'good':'bad');f.innerHTML='<b>'+(ok?'정답! +'+points+' XP 획득':'오답입니다. 정답을 확인해 보세요.')+'</b><br>'+activeFinal.e+'<br><span class="small">풀이 시간: '+spent.toFixed(1)+'초</span>';
+ $('finalNext').textContent=finalIndex===3?'탐험 결과 제출하기 →':'다음 최종 문제 →';$('finalNext').classList.remove('hidden');updateStats();
+}
+function finishFinal(){finalDone=true;const duration=elapsed();const timeBonus=Math.max(0,Math.round(200*(1-Math.min(duration,1200)/1200)));xp+=timeBonus;updateStats();clearInterval(timer);show('resultView');
+ $('resultName').textContent=player+' 탐험가의 기록 · 총 소요 '+fmtTime(duration);$('resultXP').textContent=xp+' XP';$('resultRate').textContent=Math.round(correct/attempts*100)+'%';$('resultLoot').innerHTML=inventory.map(x=>'<span class="tag">'+x+'</span>').join('');
+ $('saveStatus').textContent='기록을 서버에 저장하고 있습니다…';
+ fetch('/.netlify/functions/results?action=submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:player,score:xp,correct:correct,total:attempts,completedRegions:cleared.size,duration:duration})}).then(r=>r.json()).then(res=>{if(!res.ok)throw Error(res.error||'저장 실패');$('saveStatus').className='feedback good';$('saveStatus').textContent='저장 완료! 현재 전체 순위 '+res.rank+'위 (제출 시점 기준)';}).catch(err=>{$('saveStatus').className='feedback bad';$('saveStatus').textContent='저장 실패: '+err.message+' · 교사에게 알려 주세요.';});
+}
+function loadPublicRanking(){
+ $('rankingView').classList.remove('hidden');$('publicRanking').innerHTML='불러오는 중…';
+ fetch('/.netlify/functions/results?action=public').then(r=>r.json()).then(rows=>renderTable(rows,'public')).catch(e=>$('publicRanking').textContent=e.message);
+}
+function renderTable(rows,kind){
+ if(!rows.length){$(kind==='public'?'publicRanking':'teacherTable').innerHTML='<p class="muted small">아직 제출된 기록이 없습니다.</p>';return;}
+ let headers=kind==='public'?['순위','이름/번호','점수','정답률','완료 시간']:['순위','이름/번호','점수','정답률','정답 수','완료 시간','완료 지역','제출 시각'];
+ let body=rows.map(r=>kind==='public'?`<tr><td>${r.rank}</td><td>${esc(r.name)}</td><td><b>${r.score}</b></td><td>${r.accuracy}%</td><td>${fmtTime(r.duration)}</td></tr>`:`<tr><td>${r.rank}</td><td>${esc(r.name)}</td><td><b>${r.score}</b></td><td>${r.accuracy}%</td><td>${r.correct}/${r.total}</td><td>${fmtTime(r.duration)}</td><td>${r.completedRegions}/8</td><td>${new Date(r.submittedAt).toLocaleString('ko-KR')}</td></tr>`).join('');
+ $(kind==='public'?'publicRanking':'teacherTable').innerHTML='<table class="table"><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody></table>';
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function teacherLogin(){
+ $('teacherError').classList.add('hidden');$('teacherResults').classList.add('hidden');
+ fetch('/.netlify/functions/results?action=teacher',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:$('teacherPin').value})}).then(async r=>{const data=await r.json();if(!r.ok)throw Error(data.error||'인증 실패');teacherRows=data;$('teacherResults').classList.remove('hidden');renderTable(data,'teacher');}).catch(e=>{$('teacherError').textContent=e.message;$('teacherError').classList.remove('hidden');});
+}
+function downloadCsv(){
+ const headers=['순위','이름/번호','점수','정답률','정답수','전체문항','완료시간(초)','완료지역','제출시각'];
+ const lines=[headers].concat(teacherRows.map(r=>[r.rank,r.name,r.score,r.accuracy,r.correct,r.total,r.duration,r.completedRegions,r.submittedAt]));
+ const csv='\uFEFF'+lines.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='동아시아_교역망_탐험대_랭킹.csv';a.click();URL.revokeObjectURL(url);
+}
+$('startBtn').onclick=()=>{player=$('playerName').value.trim()||'익명 탐험가';$('intro').classList.add('hidden');$('game').classList.remove('hidden');$('welcome').textContent='🧑‍✈️ '+player+' 탐험가';startAt=Date.now();timer=setInterval(tick,1000);updateStats();drawMap();show('mapView');};
+$('backBtn').onclick=()=>{drawMap();show('mapView');};
+$('nextBtn').onclick=nextQuestion;
+$('finalAccess').onclick=startFinal;
+$('finalNext').onclick=()=>{if(finalIndex<3){finalIndex++;renderFinal();}else finishFinal();};
+$('showRankingBtn').onclick=loadPublicRanking;
+$('closeRanking').onclick=()=>$('rankingView').classList.add('hidden');
+$('teacherLogin').onclick=teacherLogin;
+$('csvBtn').onclick=downloadCsv;
+$('clearResults').onclick=()=>{if(!confirm('저장된 모든 학생 기록을 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;fetch('/.netlify/functions/results?action=clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:$('teacherPin').value})}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error);teacherRows=[];renderTable([],'teacher');alert('기록을 초기화했습니다.');}).catch(e=>alert(e.message));};
+$('restartBtn').onclick=()=>location.reload();
+</script>
+</body>
+</html>
