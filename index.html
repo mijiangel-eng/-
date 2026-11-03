@@ -4,6 +4,8 @@
   
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <style>
     :root{--ink:#203044;--muted:#667487;--line:#dce4eb;--paper:#f3f6f8;--teal:#246b70;--teal2:#e6f3f0}
     *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,"Noto Sans KR",sans-serif}
@@ -17,7 +19,7 @@
 
     /* Map voyage UI */
     .voyage-map{position:relative;border-radius:20px;overflow:hidden;background:radial-gradient(ellipse at 25% 20%,#d8f4f7 0,#b8e1ef 45%,#8fc7df 100%);border:1px solid #9dc9da;min-height:380px;box-shadow:inset 0 0 40px #ffffff70,0 12px 28px #17445c18}
-    .voyage-map svg{display:block;width:100%;height:auto;min-height:380px;filter:drop-shadow(0 2px 2px #477b8c25)}
+    .voyage-map #realTradeMap{display:block;width:100%;height:520px;min-height:420px;z-index:1}
     .map-caption{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
     .map-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#6b7b8d}
     .map-legend span{display:inline-flex;align-items:center;gap:5px}
@@ -32,9 +34,9 @@
     @keyframes routeDash{to{stroke-dashoffset:-30}}
     #shipMarker{transition:transform 1.15s cubic-bezier(.2,.75,.25,1);filter:drop-shadow(0 4px 5px #001a2b)}
     .map-heading{font-size:18px;font-weight:900;color:#17354a}.map-sub{font-size:12px;color:#6b7b8d}
-    @media(max-width:600px){.voyage-map{min-height:300px}.voyage-map svg{min-height:300px}.port-node text{font-size:18px}.port-node .port-sub{font-size:13px}}
+    @media(max-width:600px){.voyage-map{min-height:360px}.voyage-map #realTradeMap{height:390px;min-height:360px}}
 
-  </style>
+  .route-choice{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:10px 0;padding:10px;background:#f6f9fc;border:1px solid #d9e5ed;border-radius:12px}.route-btn{border:1px solid #cbd5e1;background:white;border-radius:9px;padding:7px 10px;font-size:12px;cursor:pointer}.route-btn.selected{background:#17445c;color:white;border-color:#17445c}.cargo-icon{font-size:22px;background:#fff;border:2px solid #e8b95e;border-radius:50%;width:32px;height:32px;text-align:center;line-height:28px;box-shadow:0 2px 6px #0002}.ship-icon{font-size:27px;text-shadow:0 2px 5px #fff;line-height:34px;text-align:center}.leaflet-tooltip{font-family:Arial,"Noto Sans KR",sans-serif;font-weight:700}.leaflet-control-attribution{font-size:9px!important}</style>
 </head>
 <body>
 <div class="wrap">
@@ -70,35 +72,10 @@
       <p class="small muted">지역별 문제 2개를 해결하면 교역품을 얻습니다. 8개 지역을 완료하면 최종 퀘스트가 열립니다.</p>
       <div class="map-caption"><div><div class="map-heading">🌊 동아시아 해상 교역로</div><div class="map-sub">항구를 선택하면 범선이 이동하고, 도착 후 퀴즈가 시작됩니다.</div></div><span class="tag">항구 8곳 · 항해 지도</span></div>
       <div class="voyage-map" id="voyageMap">
-        <svg id="tradeMapSvg" viewBox="0 0 1000 620" role="img" aria-label="동아시아 해상 교역 지도">
-          <defs>
-            <pattern id="mapGrid" width="70" height="70" patternUnits="userSpaceOnUse"><path d="M70 0H0V70" fill="none" stroke="#b9d4df" stroke-width="1" opacity=".22"/></pattern>
-            <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#cce8f5"/><stop offset="1" stop-color="#a9d4e9"/></linearGradient>
-          </defs>
-          <rect width="1000" height="620" fill="url(#sea)"/><rect width="1000" height="620" fill="url(#mapGrid)"/>
-          <!-- simplified, map-like land silhouettes -->
-          <g fill="#e8e9d4" stroke="#b8cbb8" stroke-width="2" stroke-linejoin="round">
-            <path d="M0 0H480L450 45 418 62 400 96 363 118 344 149 304 160 279 194 242 208 210 245 172 258 145 292 112 301 91 332 63 350 39 374 0 390Z"/>
-            <path d="M530 0H1000V116L963 130 931 157 902 164 877 190 847 186 822 161 794 152 769 126 735 116 710 90 673 83 641 58 611 54 579 68 550 49Z"/>
-            <path d="M0 425L42 407 78 414 105 443 127 468 155 494 148 529 118 541 93 526 66 503 36 498 0 512Z"/>
-            <path d="M365 250L389 229 420 239 440 271 452 306 437 340 416 365 395 347 383 315 368 287Z"/>
-            <path d="M478 300L505 286 528 309 526 346 507 372 487 354 474 329Z"/>
-            <path d="M566 390L598 373 627 388 639 418 624 447 600 460 579 437Z"/>
-            <path d="M692 252L719 236 744 256 754 293 739 321 718 310 704 284Z"/>
-            <path d="M770 350L794 331 818 346 825 378 811 408 790 396Z"/>
-            <path d="M849 174L874 155 896 170 903 199 887 222 865 210Z"/>
-            <path d="M658 500L688 484 715 498 729 525 713 549 684 551 663 529Z"/>
-            <path d="M752 519L778 506 800 522 808 547 791 569 766 558Z"/>
-            <!-- islands -->
-            <path d="M640 190l10 -7 9 12 -5 16 -11 -5zM665 222l8 -6 9 10 -4 13 -10 -4zM684 250l9 -5 8 10-5 13-9-4zM710 282l8-5 8 9-5 12-9-3z"/>
-          </g>
-          <g fill="#c9d9c4" stroke="#a9c4b2" stroke-width="1.5"><path d="M830 115l13-8 13 9-4 18-14 7-10-12z"/><path d="M835 133l9 9-4 20-10 9-7-15z"/><path d="M854 164l9 5-3 16-8 5-6-12z"/></g>
-          <g id="routeLayer"></g><g id="portLayer"></g>
-          <g id="shipMarker" transform="translate(475 180)"><text x="0" y="0" text-anchor="middle" font-size="34">⛵</text></g>
-          <text x="22" y="598" fill="#507b91" font-size="13">동아시아 해상 교역로 · 학습용 개략 지도</text>
-        </svg>
+        <div id="realTradeMap" role="application" aria-label="실제 지리 기반 동아시아 교역 지도"></div>
       </div>
-      <div class="map-legend"><span><i class="legend-dot"></i> 탐험 가능한 항구</span><span>🟢 완료 항구</span><span>⛵ 현재 범선</span><span>〰️ 해상 교역로</span></div>
+      <div class="map-legend"><span><i class="legend-dot"></i> 탐험 항구</span><span>🟢 완료 항구</span><span>⛵ 범선</span><span>🧺 교역품 산지</span><span>〰️ 항로</span></div>
+      <div class="route-choice"><b>⚓ 항해 전략 선택</b><button class="route-btn selected" data-mode="balanced">균형 항해</button><button class="route-btn" data-mode="fast">쾌속 항해</button><button class="route-btn" data-mode="careful">안전 항해</button><span id="routeHint" class="small muted">기본 보상 · 표준 항해</span></div>
       <div class="voyage-tip" id="voyageTip">🧭 <b>항해 안내</b>　첫 항구를 선택해 출항하세요. 각 항구에서 퀴즈 2개를 해결하면 교역품과 경험치를 획득합니다.</div>
       <div id="regions" class="hidden"></div>
       <button id="finalAccess" class="btn primary full hidden" style="margin-top:13px">🌏 최종 교역망 퀘스트 도전하기 →</button>
@@ -194,35 +171,44 @@ function show(id){['mapView','missionView','finalView','resultView'].forEach(x=>
 function updateStats(){$('xp').textContent=xp+' XP';$('cleared').textContent=cleared.size+' / 8';$('progressText').textContent=cleared.size+' / 8 지역 완료';$('progressBar').style.width=(cleared.size/8*100)+'%';$('inventory').innerHTML=inventory.length?inventory.map(x=>'<span class="tag">🎁 '+x+'</span>').join(''):'<span class="tag">🎒 교역품: 아직 없음</span>';}
 function tick(){$('clock').textContent=fmtTime(elapsed());}
 const PORTS=[
- {id:'china',x:475,y:180,label:'중국·명',sub:'정화의 원정',emoji:'🐉'},
- {id:'ryukyu',x:690,y:215,label:'류큐',sub:'중계 무역',emoji:'⛵'},
- {id:'vietnam',x:510,y:345,label:'호이안',sub:'국제 항구',emoji:'🏮'},
- {id:'melaka',x:400,y:455,label:'말라카',sub:'해상 교역로',emoji:'🕌'},
- {id:'indonesia',x:585,y:520,label:'말루쿠',sub:'향신료',emoji:'🌶️'},
- {id:'philippines',x:760,y:380,label:'마닐라',sub:'갈레온 무역',emoji:'🌎'},
- {id:'japan',x:825,y:145,label:'나가사키',sub:'은·나가사키',emoji:'🗾'},
- {id:'europe',x:160,y:175,label:'마카오',sub:'포르투갈 교역',emoji:'🌍'}
+ {id:'china',lat:32.0603,lng:118.7969,label:'중국·명',sub:'정화의 원정',emoji:'🐉',place:'난징',history:'명은 정화의 원정을 통해 조공 체제를 확대했으며, 이후 해금 정책으로 민간의 사적 해외 무역을 제한했다.'},
+ {id:'ryukyu',lat:26.2124,lng:127.6809,label:'류큐',sub:'중계 무역',emoji:'⛵',place:'나하',history:'류큐 왕국은 중국·조선·일본·동남아시아를 연결하는 중계 무역의 중심지였다.'},
+ {id:'vietnam',lat:15.8801,lng:108.3380,label:'호이안',sub:'국제 항구',emoji:'🏮',place:'호이안',history:'호이안에는 중국·일본·인도·네덜란드 상인 등이 모였고, 내원교가 일본인·중국인 거류지를 연결했다.'},
+ {id:'melaka',lat:2.1896,lng:102.2501,label:'말라카',sub:'해상 교역로',emoji:'🕌',place:'말라카',history:'말라카는 인도양과 동아시아를 잇는 항로의 요충지로, 인도 면직물·향신료·중국 비단과 도자기가 거래되었다.'},
+ {id:'indonesia',lat:0.7893,lng:127.3842,label:'말루쿠',sub:'향신료',emoji:'🌶️',place:'테르나테',history:'말루쿠 제도는 정향과 육두구의 산지였다. 유럽 세력은 향신료 무역을 장악하려고 진출했다.'},
+ {id:'philippines',lat:14.5995,lng:120.9842,label:'마닐라',sub:'갈레온 무역',emoji:'🌎',place:'마닐라',history:'마닐라 갈레온 무역은 아메리카 은과 중국산 비단·도자기 등을 연결했다.'},
+ {id:'japan',lat:32.7503,lng:129.8777,label:'나가사키',sub:'은·나가사키',emoji:'🗾',place:'나가사키',history:'일본은 이와미 은광 등에서 은을 생산했고, 에도 막부는 나가사키에서 네덜란드·중국과의 교역을 허용했다.'},
+ {id:'europe',lat:22.1987,lng:113.5439,label:'마카오',sub:'포르투갈 교역',emoji:'🌍',place:'마카오',history:'마카오를 거점으로 한 포르투갈 교역과 마닐라의 스페인 교역은 동아시아를 세계 교역망에 연결했다.'}
 ];
 const PORT_ROUTE=[['europe','china'],['china','japan'],['china','ryukyu'],['ryukyu','vietnam'],['vietnam','melaka'],['melaka','indonesia'],['melaka','philippines'],['philippines','japan']];
+let tradeMap=null,portMarkers={},routeLines={},shipMarker=null,lastPort='china',routeMode='balanced',cargoMarkers=[];
+const ROUTE_MODES={balanced:{label:'균형 항해',duration:1050,bonus:1,hint:'기본 보상 · 표준 항해'},fast:{label:'쾌속 항해',duration:650,bonus:1.15,hint:'빠른 항해 · 정답 XP +15%'},careful:{label:'안전 항해',duration:1450,bonus:1.30,hint:'느린 항해 · 정답 XP +30%'}};
+document.querySelectorAll('.route-btn').forEach(b=>b.addEventListener('click',()=>{routeMode=b.dataset.mode;document.querySelectorAll('.route-btn').forEach(x=>x.classList.toggle('selected',x===b));$('routeHint').textContent=ROUTE_MODES[routeMode].hint;}));
+function shipIcon(){return L.divIcon({className:'ship-icon',html:'⛵',iconSize:[34,34],iconAnchor:[17,17]});}
 function drawMap(){
- const layer=$('portLayer'),routes=$('routeLayer');if(!layer||!routes)return;
- const byId=Object.fromEntries(PORTS.map(p=>[p.id,p]));
- routes.innerHTML=PORT_ROUTE.map(([a,b])=>{const p=byId[a],q=byId[b];return `<path class="route-line" id="route-${a}-${b}" d="M${p.x} ${p.y} Q${(p.x+q.x)/2} ${(p.y+q.y)/2-35} ${q.x} ${q.y}"/>`;}).join('');
- layer.innerHTML=PORTS.map(p=>{const done=cleared.has(p.id);return `<g class="port-node ${done?'completed':''}" data-port="${p.id}" tabindex="0" role="button" aria-label="${p.label} ${done?'탐험 완료':'항해하기'}" transform="translate(${p.x} ${p.y})"><circle class="halo" r="30"/><circle class="port-core" r="12"/><text x="0" y="-23" text-anchor="middle">${p.emoji} ${p.label}</text><text class="port-sub" x="0" y="35" text-anchor="middle">${done?'✓ 완료':p.sub}</text></g>`;}).join('');
- layer.querySelectorAll('[data-port]').forEach(node=>{const id=node.dataset.port;if(cleared.has(id)){node.classList.add('locked');return;}node.addEventListener('click',()=>sailToPort(id));node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sailToPort(id);}});});
- const start=PORTS.find(p=>p.id===lastPort)||PORTS[0];$('shipMarker').setAttribute('transform',`translate(${start.x} ${start.y})`);
- $('finalAccess').classList.toggle('hidden',cleared.size!==8||finalDone);
+ if(!tradeMap){
+  tradeMap=L.map('realTradeMap',{scrollWheelZoom:false}).setView([17,116],4);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(tradeMap);
+  tradeMap.fitBounds([[-8,90],[43,145]]);
+  PORT_ROUTE.forEach(([a,b],i)=>{const p=PORTS.find(x=>x.id===a),q=PORTS.find(x=>x.id===b);const style=i===0||i===6?{color:'#8b5cf6',dashArray:'3 8'}:i===4||i===5?{color:'#d97706',dashArray:'10 5'}:{color:'#168ba4',dashArray:'7 7'};routeLines[a+'-'+b]=L.polyline([[p.lat,p.lng],[q.lat,q.lng]],{...style,weight:3,opacity:.72}).addTo(tradeMap);routeLines[a+'-'+b].bindTooltip(i===0||i===6?'은·세계 교역':i===4||i===5?'향신료 교역':'해상 중계 교역');});
+  PORTS.forEach(p=>{const marker=L.marker([p.lat,p.lng],{title:p.label}).addTo(tradeMap);marker.bindTooltip(`${p.emoji} ${p.label}<br><small>${p.place} · ${p.sub}</small>`,{direction:'top'});marker.bindPopup(`<b>${p.emoji} ${p.label} 항구 기록</b><p>${p.history}</p><small>마커를 클릭하면 이 항구로 항해합니다.</small>`);marker.on('click',()=>sailToPort(p.id));portMarkers[p.id]=marker;});
+  shipMarker=L.marker([PORTS[0].lat,PORTS[0].lng],{icon:shipIcon(),interactive:false,zIndexOffset:1000}).addTo(tradeMap);
+  const cargo=[{lat:35.2,lng:118.4,icon:'🧵',name:'비단·도자기'},{lat:2.2,lng:102.3,icon:'🧶',name:'인도 면직물'},{lat:0.8,lng:127.4,icon:'🌶️',name:'정향·육두구'},{lat:14.6,lng:121,icon:'🪙',name:'아메리카 은'}];
+  cargo.forEach(c=>{const m=L.marker([c.lat,c.lng],{icon:L.divIcon({className:'cargo-wrap',html:`<div class="cargo-icon">${c.icon}</div>`,iconSize:[34,34],iconAnchor:[17,17]})}).addTo(tradeMap);m.bindTooltip('교역품: '+c.name);cargoMarkers.push(m);});
+ }else{Object.keys(portMarkers).forEach(id=>portMarkers[id].setOpacity(cleared.has(id)?.45:1));}
+ $('finalAccess').classList.toggle('hidden',cleared.size!==8||finalDone);setTimeout(()=>tradeMap.invalidateSize(),100);
 }
-let lastPort='china';
-function sailToPort(id){
- const p=PORTS.find(x=>x.id===id),from=PORTS.find(x=>x.id===lastPort)||PORTS[0];
- if(cleared.has(id))return;
- document.querySelectorAll('.route-line').forEach(x=>x.classList.remove('active'));
- const route=document.getElementById(`route-${lastPort}-${id}`)||document.getElementById(`route-${id}-${lastPort}`);if(route)route.classList.add('active');
- $('shipMarker').setAttribute('transform',`translate(${p.x} ${p.y})`);
- $('voyageTip').innerHTML=`⛵ <b>${p.label} 항구로 항해 중!</b>　범선이 해상 교역로를 따라 이동합니다.`;
- document.querySelectorAll('.port-node').forEach(n=>n.style.pointerEvents='none');
- setTimeout(()=>{document.querySelectorAll('.port-node').forEach(n=>n.style.pointerEvents='');if(!cleared.has(id)){lastPort=id;$('voyageTip').innerHTML=`⚓ <b>${p.label} 도착!</b>　항구에 입항했습니다. 퀴즈를 풀어 교역품을 획득하세요.`;startMission(id);}},1150);
+function animateShipTo(port){
+ const from=shipMarker.getLatLng(),to=L.latLng(port.lat,port.lng),started=performance.now(),duration=ROUTE_MODES[routeMode].duration;
+ function frame(now){const t=Math.min(1,(now-started)/duration),ease=t*t*(3-2*t);shipMarker.setLatLng([from.lat+(to.lat-from.lat)*ease,from.lng+(to.lng-from.lng)*ease]);if(t<1)requestAnimationFrame(frame);}
+ requestAnimationFrame(frame);
+}
+function sailToPort(id){const p=PORTS.find(x=>x.id===id);if(cleared.has(id))return;
+ Object.values(routeLines).forEach(line=>line.setStyle({color:'#168ba4',weight:3,opacity:.55}));
+ const route=routeLines[lastPort+'-'+id]||routeLines[id+'-'+lastPort];if(route)route.setStyle({color:'#ff9d42',weight:5,opacity:1});
+ animateShipTo(p);$('voyageTip').innerHTML=`⛵ <b>${p.label} 항구로 항해 중!</b> 실제 해안선과 도시 위치를 반영한 지도에서 이동합니다.`;
+ Object.values(portMarkers).forEach(m=>m.setOpacity(.55));
+ setTimeout(()=>{Object.values(portMarkers).forEach(m=>m.setOpacity(1));if(!cleared.has(id)){lastPort=id;$('voyageTip').innerHTML=`⚓ <b>${p.label}(${p.place}) 도착!</b> 항구에 입항했습니다. 퀴즈를 풀어 교역품을 획득하세요.`;startMission(id);}},850);
 }
 function startMission(id){current=REGIONS.find(r=>r.id===id);qIndex=0;show('missionView');$('missionEmoji').textContent=current.emoji;$('missionNo').textContent='지역 임무 · '+(REGIONS.indexOf(current)+1)+' / 8';$('missionTitle').textContent=current.name;$('missionDesc').textContent=current.desc;renderQuestion();}
 function renderQuestion(){
@@ -238,11 +224,11 @@ function awardSpeed(correctAnswer,base,maxBonus,limitSeconds,spent){
 function answer(i,isFinal){
  if(answered)return;answered=true;attempts++;
  const item=isFinal?activeFinal:current.active,chosen=item.a[i],ok=chosen.correct,spent=Math.max(1,(Date.now()-qStarted)/1000);
- const points=awardSpeed(ok,isFinal?150:100,isFinal?75:50,isFinal?45:30,spent);
+ const points=Math.round(awardSpeed(ok,isFinal?150:100,isFinal?75:50,isFinal?45:30,spent)*(ok?ROUTE_MODES[routeMode].bonus:1));
  if(ok){correct++;xp+=points;}
  [...$('answers').children].forEach((b,j)=>{b.disabled=true;if(item.a[j].correct)b.classList.add('correct');else if(j===i)b.classList.add('wrong');});
  const f=$('feedback');f.className='feedback '+(ok?'good':'bad');
- f.innerHTML='<b>'+(ok?'정답! +'+points+' XP 획득 🎉':'오답입니다. 정답을 확인해 보세요.')+'</b><br>'+item.e+'<br><span class="small">풀이 시간: '+spent.toFixed(1)+'초 · '+(ok?'속도 보너스 포함':'오답은 경험치 없음')+'</span>';
+ f.innerHTML='<b>'+(ok?'정답! +'+points+' XP 획득 🎉':'오답입니다. 정답을 확인해 보세요.')+'</b><br>'+item.e+'<br><span class="small">풀이 시간: '+spent.toFixed(1)+'초 · 항해 전략: '+ROUTE_MODES[routeMode].label+'</span>';
  $('nextBtn').textContent=qIndex===1?'지역 임무 완료 →':'다음 문제 →';$('nextBtn').classList.remove('hidden');updateStats();
 }
 function nextQuestion(){
@@ -260,7 +246,7 @@ function renderFinal(){
 }
 function answerFinal(i){
  if(answered)return;answered=true;attempts++;
- const chosen=activeFinal.a[i],ok=chosen.correct,spent=Math.max(1,(Date.now()-qStarted)/1000),points=awardSpeed(ok,150,75,45,spent);
+ const chosen=activeFinal.a[i],ok=chosen.correct,spent=Math.max(1,(Date.now()-qStarted)/1000),points=Math.round(awardSpeed(ok,150,75,45,spent)*(ok?ROUTE_MODES[routeMode].bonus:1));
  if(ok){correct++;xp+=points;}
  [...$('finalAnswers').children].forEach((b,j)=>{b.disabled=true;if(activeFinal.a[j].correct)b.classList.add('correct');else if(j===i)b.classList.add('wrong');});
  const f=$('finalFeedback');f.className='feedback '+(ok?'good':'bad');f.innerHTML='<b>'+(ok?'정답! +'+points+' XP 획득':'오답입니다. 정답을 확인해 보세요.')+'</b><br>'+activeFinal.e+'<br><span class="small">풀이 시간: '+spent.toFixed(1)+'초</span>';
